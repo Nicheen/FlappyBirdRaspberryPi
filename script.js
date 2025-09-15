@@ -407,6 +407,18 @@ class Game {
             this.ctx.fillStyle = "#FFFFFF";
             this.ctx.fillText(this.bird.score.toString(), this.canvas.width / 2, this.canvas.height / 5);
         }
+
+        if (this.gameOver) {
+            // Use custom font if loaded, otherwise fallback
+            const fontFamily = this.customFontLoaded ? 'FlappyBirdFont' : 'Arial';
+            this.ctx.font = `48px ${fontFamily}, sans-serif`;
+            this.ctx.textAlign = "center";
+            this.ctx.fillStyle = "#FFFFFF";
+            this.ctx.fillText("Game Over", this.canvas.width / 2, this.canvas.height / 2);
+            this.ctx.fillText(`Best Score: ${this.bird.bestScore}`, this.canvas.width / 2, this.canvas.height / 2 + 60);
+            this.ctx.fillText(`Your Score: ${this.bird.score}`, this.canvas.width / 2, this.canvas.height / 2 + 120);
+            
+        }
     }
 
     drawGround() {
@@ -442,15 +454,6 @@ class Game {
             localStorage.setItem('flappyBestScore', this.bird.bestScore.toString());
         }
 
-        // Use custom font if loaded, otherwise fallback
-        const fontFamily = this.customFontLoaded ? 'FlappyBirdFont' : 'Arial';
-        this.ctx.font = `48px ${fontFamily}, sans-serif`;
-        this.ctx.textAlign = "center";
-        this.ctx.fillStyle = "#FFFFFF";
-        this.ctx.fillText("Game Over", this.canvas.width / 2, this.canvas.height / 2);
-        this.ctx.fillText(`Best Score: ${this.bird.bestScore}`, this.canvas.width / 2, this.canvas.height / 2 + 60);
-        this.ctx.fillText(`Your Score: ${this.bird.score}`, this.canvas.width / 2, this.canvas.height / 2 + 120);
-        
         // Show game over screen
         document.getElementById('gameOverScreen').style.display = 'block';
     }
