@@ -320,8 +320,6 @@ class Game {
         this.started = false;
         this.lastTime = 0;
         this.groundX = 0;
-
-        this.updateUI();
     }
 
     setupEventListeners() {
@@ -382,8 +380,6 @@ class Game {
             this.pipes.checkCollisions(this.bird)) {
             this.endGame();
         }
-
-        this.updateUI();
     }
 
     draw() {
@@ -406,26 +402,11 @@ class Game {
         if (this.bird) {
             // Use custom font if loaded, otherwise fallback
             const fontFamily = this.customFontLoaded ? 'FlappyBirdFont' : 'Arial';
-            this.ctx.font = `bold 48px ${fontFamily}, sans-serif`;
+            this.ctx.font = `48px ${fontFamily}, sans-serif`;
             this.ctx.textAlign = "center";
+            this.ctx.fillStyle = "#FFFFFF";
             this.ctx.fillText(this.bird.score.toString(), this.canvas.width / 2, this.canvas.height / 5);
         }
-
-        // Question code
-        function Playbutton(ctx, rect, lWidth, fillColor, lineColor) {
-            ctx.beginPath();
-            ctx.rect(rect.x, rect.y, rect.width, rect.height);
-            ctx.fillStyle = 'rgba(225,225,225,0.5)';
-            ctx.fill();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#000000';
-            ctx.stroke();
-            ctx.closePath();
-            ctx.font = '40pt Kremlin Pro Web';
-            ctx.fillStyle = '#000000';
-            ctx.fillText('Start', rect.x + rect.width / 4, rect.y + 64);
-        }
-        Playbutton(this.ctx, rect);
     }
 
     drawGround() {
@@ -451,11 +432,6 @@ class Game {
         }
     }
 
-    updateUI() {
-        document.getElementById('scoreDisplay').textContent = this.bird.score;
-        document.getElementById('bestScoreDisplay').textContent = this.bird.bestScore;
-    }
-
     endGame() {
         this.gameOver = true;
         this.running = false;
@@ -466,33 +442,19 @@ class Game {
             localStorage.setItem('flappyBestScore', this.bird.bestScore.toString());
         }
 
+        // Use custom font if loaded, otherwise fallback
+        const fontFamily = this.customFontLoaded ? 'FlappyBirdFont' : 'Arial';
+        this.ctx.font = `48px ${fontFamily}, sans-serif`;
+        this.ctx.textAlign = "center";
+        this.ctx.fillStyle = "#FFFFFF";
+        this.ctx.fillText("Game Over", this.canvas.width / 2, this.canvas.height / 2);
+        this.ctx.fillText(`Best Score: ${this.bird.bestScore}`, this.canvas.width / 2, this.canvas.height / 2 + 60);
+        this.ctx.fillText(`Your Score: ${this.bird.score}`, this.canvas.width / 2, this.canvas.height / 2 + 120);
+        
         // Show game over screen
-        document.getElementById('finalScore').textContent = this.bird.score;
         document.getElementById('gameOverScreen').style.display = 'block';
-        this.updateUI();
     }
 }
-
-function getMousePos(canvas, event) {
-  var rect = canvas.getBoundingClientRect();
-  return {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top,
-  };
-}
-
-// Function to check whether a point is inside a rectangle
-function isInside(pos, rect) {
-  return pos.x > rect.x && pos.x < rect.x + rect.width && pos.y < rect.y + rect.height && pos.y > rect.y
-}
-
-// The rectangle should have x,y,width,height properties
-var rect = {
-  x: 100,
-  y: 100,
-  width: 200,
-  height: 100,
-};
 
 let game;
 const path_image_background = "./images/background.png"
@@ -513,13 +475,3 @@ function restartGame() {
 
 // Start the game when page loads
 window.addEventListener('load', startGame);
-
-canvas.addEventListener('click', function(evt) {
-  var mousePos = getMousePos(game.canvas, evt);
-
-  if (isInside(mousePos, rect)) {
-    alert('clicked inside rect');
-  } else {
-    alert('clicked outside rect');
-  }
-}, false);
