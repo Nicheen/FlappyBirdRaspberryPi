@@ -1,0 +1,19 @@
+* {
+    margin: 0;
+}
+
+@font-face {
+    font-family: 'FlappyBirdFont';
+    src: url('./fonts/flappy-bird-font.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Optional: Preload the font */
+.font-preload {
+    font-family: 'FlappyBirdFont';
+    position: absolute;
+    left: -9999px;
+    visibility: hidden;
+}
