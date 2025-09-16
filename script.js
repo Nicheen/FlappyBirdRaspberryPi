@@ -284,6 +284,8 @@ class Game {
         this.groundX = 0; 
 
         this.lastJumpCommand = null;
+        this.lastFileModified = null;
+        this.lastJumpCommand = null;
         this.checkPythonCommands();
 
         // Pre-load background image
@@ -299,22 +301,28 @@ class Game {
         this.initialize();
     }
 
-    async checkPythonCommands() {
-        try {
-            const response = await fetch('./data.json?' + new Date().getTime());
+    checkPythonCommands() {
+    // Fire-and-forget fetch - don't await it
+    fetch('./data.json?' + new Date().getTime())
+        .then(response => {
             if (response.ok) {
-                const data = await response.json();
-
-                if (data.jump && data.timestamp !== this.lastJumpCommand) {
-                    this.lastJumpCommand = data.timestamp;
-                    this.handleJump();
-                }
+                return response.json();
             }
-        } catch (error) {
+            throw new Error('Network response was not ok');
+        })
+        .then(data => {
+            if (data.jump && data.timestamp !== this.lastJumpCommand) {
+                this.lastJumpCommand = data.timestamp;
+                this.handleJump();
+            }
+        })
+        .catch(error => {
+            // Silent error handling
+        });
 
-        }
-
-        setTimeout(() => this.checkPythonCommands(), 25);
+    // Schedule next check - this runs immediately, not waiting for fetch
+    const pollInterval = (this.started && !this.gameOver) ? 50 : 200;
+    setTimeout(() => this.checkPythonCommands(), pollInterval);
     }
 
     handleJump() {
