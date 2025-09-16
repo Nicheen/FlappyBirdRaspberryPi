@@ -1,5 +1,7 @@
 * {
     margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 @font-face {
@@ -16,4 +18,36 @@
     position: absolute;
     left: -9999px;
     visibility: hidden;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden; /* Prevent scrollbars */
+    background: #000; /* Black background behind canvas */
+}
+
+.game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #000;
+}
+
+#gameCanvas {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Maintains aspect ratio, prevents stretching */
+    border: 3px solid #FFD700; /* Golden outline */
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); /* Glowing effect */
+    background: #87CEEB; /* Sky blue fallback */
+}
+
+
+@media (max-width: 480px) {
+    #gameCanvas {
+        border: 2px solid #FFD700; /* Thinner border on small screens */
+    }
 }

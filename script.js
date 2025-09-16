@@ -160,7 +160,7 @@ class Pipe {
         }
 
         // Draw collision boxes in red
-        this.drawCollisionBoxes(ctx, canvasHeight);
+        // this.drawCollisionBoxes(ctx, canvasHeight);
     }
 
     checkCollision(bird) {
@@ -253,7 +253,7 @@ class Pipes {
 
     spawnPipe(canvasWidth) {
         // Spawn pipe like reference with random gap position
-        const gapY = (Math.random() * 200) + 150; // Random between 150-350
+        const gapY = (Math.random() * 350) + 50; // Random between 50-400
         const pipe = new Pipe(canvasWidth + 100, gapY, 200);
         this.addPipe(pipe);
     }
@@ -281,7 +281,10 @@ class Game {
         this.bird = new Bird();
         this.pipes = new Pipes();
         this.lastTime = 0;
-        this.groundX = 0; // For scrolling ground like reference
+        this.groundX = 0; 
+
+        this.lastJumpCommand = null;
+        this.checkPythonCommands();
 
         // Pre-load background image
         this.backgroundImage = new Image();
@@ -294,6 +297,33 @@ class Game {
         this.loadCustomFont();
         this.setupEventListeners();
         this.initialize();
+    }
+
+    async checkPythonCommands() {
+        try {
+            const response = await fetch('./data.json?' + new Date().getTime());
+            if (response.ok) {
+                const data = await response.json();
+
+                if (data.jump && data.timestamp !== this.lastJumpCommand) {
+                    this.lastJumpCommand = data.timestamp;
+                    this.handleJump();
+                }
+            }
+        } catch (error) {
+
+        }
+
+        setTimeout(() => this.checkPythonCommands(), 25);
+    }
+
+    handleJump() {
+        if (!this.gameOver) {
+            this.bird.jump();
+            if (!this.started) {
+                this.start();
+            }
+        }
     }
 
     async loadCustomFont() {
@@ -329,6 +359,8 @@ class Game {
                 if (!this.started) {
                     this.start();
                 }
+            } else {
+                this.initialize();
             }
         };
 
@@ -406,18 +438,6 @@ class Game {
             this.ctx.textAlign = "center";
             this.ctx.fillStyle = "#FFFFFF";
             this.ctx.fillText(this.bird.score.toString(), this.canvas.width / 2, this.canvas.height / 5);
-        }
-
-        if (this.gameOver) {
-            // Use custom font if loaded, otherwise fallback
-            const fontFamily = this.customFontLoaded ? 'FlappyBirdFont' : 'Arial';
-            this.ctx.font = `48px ${fontFamily}, sans-serif`;
-            this.ctx.textAlign = "center";
-            this.ctx.fillStyle = "#FFFFFF";
-            this.ctx.fillText("Game Over", this.canvas.width / 2, this.canvas.height / 2);
-            this.ctx.fillText(`Best Score: ${this.bird.bestScore}`, this.canvas.width / 2, this.canvas.height / 2 + 60);
-            this.ctx.fillText(`Your Score: ${this.bird.score}`, this.canvas.width / 2, this.canvas.height / 2 + 120);
-            
         }
     }
 
