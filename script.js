@@ -302,27 +302,27 @@ class Game {
     }
 
     checkPythonCommands() {
-    // Fire-and-forget fetch - don't await it
-    fetch('./data.json?' + new Date().getTime())
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            }
-            throw new Error('Network response was not ok');
-        })
-        .then(data => {
-            if (data.jump && data.timestamp !== this.lastJumpCommand) {
-                this.lastJumpCommand = data.timestamp;
-                this.handleJump();
-            }
-        })
-        .catch(error => {
-            // Silent error handling
-        });
+        // Fire-and-forget fetch - don't await it
+        fetch('./data.json?' + new Date().getTime())
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Network response was not ok');
+            })
+            .then(data => {
+                if (data.jump && data.timestamp !== this.lastJumpCommand) {
+                    this.lastJumpCommand = data.timestamp;
+                    this.handleJump();
+                }
+            })
+            .catch(error => {
+                // Silent error handling
+            });
 
-    // Schedule next check - this runs immediately, not waiting for fetch
-    const pollInterval = (this.started && !this.gameOver) ? 50 : 200;
-    setTimeout(() => this.checkPythonCommands(), pollInterval);
+        // Schedule next check - this runs immediately, not waiting for fetch
+        const pollInterval = (this.started && !this.gameOver) ? 50 : 200;
+        setTimeout(() => this.checkPythonCommands(), pollInterval);
     }
 
     handleJump() {
