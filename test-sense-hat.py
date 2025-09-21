@@ -3,14 +3,19 @@ from sense_hat import SenseHat
 
 sense = SenseHat()
 
+red = (255, 0, 0)
+
 while True:
-	acceleration = sense.get_accelerometer_raw()
-	x = acceleration['x']
+    acceleration = sense.get_accelerometer_raw()
+    x = acceleration['x']
 	y = acceleration['y']
 	z = acceleration['z']
 
-	x=round(x, 0)
-	y=round(y, 0)
-	z=round(z, 0)
+    x = abs(x)
+    y = abs(y)
+    z = abs(z)
 
-	print("x={0}, y={1}, z={2}".format(x, y, z))
+    if x > 1 or y > 1 or z > 1:
+        sense.show_letter("A", red)
+    else:
+        sense.clear()
