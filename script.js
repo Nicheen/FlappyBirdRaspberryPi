@@ -317,7 +317,7 @@ class Game {
                 }
             })
             .catch(error => {
-                // Silent error handling
+		throw new Error(error);
             });
 
         // Schedule next check - this runs immediately, not waiting for fetch
@@ -332,6 +332,9 @@ class Game {
                 this.start();
             }
         }
+	else{
+	    this.initialize();
+	}
     }
 
     async loadCustomFont() {
@@ -361,18 +364,17 @@ class Game {
     }
 
     setupEventListeners() {
-        const handleJump = () => {
-            if (!this.gameOver) {
-                this.bird.jump();
-                if (!this.started) {
-                    this.start();
-                }
-            } else {
-                this.initialize();
-            }
-        };
+        //const handleJump = () => {
+        //    if (!this.gameOver) {
+        //        this.bird.jump();
+        //        if (!this.started) {
+        //            this.start();
+        //        }
+        //    } else {
+        //        this.initialize();
+        //    }
+        //};
 
-	checkPythonCommands();
         // Keyboard controls
         //document.addEventListener('keydown', (e) => {
         //    if (e.code === 'Space') {
@@ -409,6 +411,7 @@ class Game {
         
         this.bird.update(deltaTime);
         
+	this.checkPythonCommands();
         if (this.started) {
             this.pipes.update(this.bird, deltaS);
             
@@ -484,7 +487,7 @@ class Game {
         }
 
         // Show game over screen
-        document.getElementById('gameOverScreen').style.display = 'block';
+        //document.getElementById('gameOverScreen').style.display = 'block';
     }
 }
 
@@ -501,7 +504,7 @@ function startGame() {
 }
 
 function restartGame() {
-    document.getElementById('gameOverScreen').style.display = 'none';
+    //document.getElementById('gameOverScreen').style.display = 'none';
     game.initialize();
 }
 

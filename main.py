@@ -30,12 +30,11 @@ class FlappyBirdController:
             print(f"Error: {e}")
 
     def device_listener(self):
+        print("we here")
         while self.running:
             try:
-                now = time.time()
-                if is_shaken() && ((now - time_of_last_jump) > 0.2):
+                if keyboard.is_pressed('space'): #self.is_shaken():
                     self.send_jump_command()
-                    time_of_last_jump = now
                 elif keyboard.is_pressed('q'):
                     self.running = False
                     break
@@ -64,14 +63,18 @@ class FlappyBirdController:
             self.device_listener()
         except ImportError:
             print("Make sure to pip install keyboard!")
+        except Exception as e:
+            print(f"Error: {e}")
+            return
 
     def stop(self):
         """Stop the controller"""
         self.running = False
 
-    def is_shaken:
+    def is_shaken(self):
         red = (255, 0, 0)
-        acceleration = sense.get_accelerometer_raw()
+        green = (0, 255, 0)
+        acceleration = self.sense.get_accelerometer_raw()
         x = acceleration['x']
         y = acceleration['y']
         z = acceleration['z']
@@ -81,10 +84,13 @@ class FlappyBirdController:
         z = abs(z)
 
         if x > 3 or y > 3 or z > 3:
+            self.sense.show_letter('A', red)
             return True;
+        self.sense.show_letter('A', green)
         return False;
 
 def main():
+    print("starting ******************************** here")
     controller = FlappyBirdController()
     controller.start()
       
