@@ -1,6 +1,7 @@
 import json
 import time
 from pathlib import Path
+from sense_hat import SenseHat
 
 # You'll need to install this: pip install keyboard
 import keyboard
@@ -10,6 +11,7 @@ class FlappyBirdController:
         self.json_file = Path("data.json")
         self.running = False
         self.jump_count = 0
+        self.time_of_last_jump = 0
 
     def send_jump_command(self):
         self.jump_count += 1
@@ -26,17 +28,15 @@ class FlappyBirdController:
         except Exception as e:
             print(f"Error: {e}")
 
-    def keyboard_listener(self):
+    def device_listener(self):
         while self.running:
             try:
-                if keyboard.is_pressed('space'):
+                if is_shaken() && ((time.time() - time_of_last_jump) > 0.2):
                     self.send_jump_command()
-                    time.sleep(0.2)
+                    time_of_last_jump = time.time()
                 elif keyboard.is_pressed('q'):
                     self.running = False
                     break
-
-                time.sleep(0.05)
             except Exception as e:
                 print(f"Error: {e}")
                 break
@@ -59,13 +59,33 @@ class FlappyBirdController:
             return
 
         try:
-            self.keyboard_listener()
+            self.device_listener()
         except ImportError:
             print("Make sure to pip install keyboard!")
 
     def stop(self):
         """Stop the controller"""
         self.running = False
+
+
+sense = SenseHat()
+
+red = (255, 0, 0)
+
+def is_shaken:
+    acceleration = sense.get_accelerometer_raw()
+    x = acceleration['x']
+    y = acceleration['y']
+    z = acceleration['z']
+
+    x = abs(x)
+    y = abs(y)
+    z = abs(z)
+
+    if x > 3 or y > 3 or z > 3:
+        return True;
+    return False;
+
 
 def main():
     controller = FlappyBirdController()
