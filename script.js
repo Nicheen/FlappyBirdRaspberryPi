@@ -372,16 +372,17 @@ class Game {
             }
         };
 
+	checkPythonCommands();
         // Keyboard controls
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                handleJump();
-            }
-        });
+        //document.addEventListener('keydown', (e) => {
+        //    if (e.code === 'Space') {
+        //        e.preventDefault();
+        //        handleJump();
+        //    }
+        //});
 
-        // Mouse/touch controls
-        this.canvas.addEventListener('click', handleJump);
+        //// Mouse/touch controls
+        //this.canvas.addEventListener('click', handleJump);
     }
 
     start() {
