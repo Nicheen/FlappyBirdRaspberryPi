@@ -286,7 +286,6 @@ class Game {
         this.lastJumpCommand = null;
         this.lastFileModified = null;
         this.lastJumpCommand = null;
-        this.checkPythonCommands();
 
         // Pre-load background image
         this.backgroundImage = new Image();
@@ -296,9 +295,7 @@ class Game {
         this.groundImage.src = path_image_ground;
         
         this.customFontLoaded = false;
-        this.loadCustomFont();
         this.setupEventListeners();
-        this.initialize();
     }
 
     checkPythonCommands() {
@@ -317,12 +314,12 @@ class Game {
                 }
             })
             .catch(error => {
-		throw new Error(error);
+                throw new Error(error);
             });
 
         // Schedule next check - this runs immediately, not waiting for fetch
-        const pollInterval = (this.started && !this.gameOver) ? 50 : 200;
-        setTimeout(() => this.checkPythonCommands(), pollInterval);
+        //const pollInterval = (this.started && !this.gameOver) ? 50 : 200;
+        //setTimeout(() => this.checkPythonCommands(), pollInterval);
     }
 
     handleJump() {
@@ -332,9 +329,10 @@ class Game {
                 this.start();
             }
         }
-	else{
-	    this.initialize();
-	}
+        else{
+            this.initialize();
+            this.start();
+        }
     }
 
     async loadCustomFont() {
@@ -364,22 +362,11 @@ class Game {
     }
 
     setupEventListeners() {
-        //const handleJump = () => {
-        //    if (!this.gameOver) {
-        //        this.bird.jump();
-        //        if (!this.started) {
-        //            this.start();
-        //        }
-        //    } else {
-        //        this.initialize();
-        //    }
-        //};
-
         // Keyboard controls
         //document.addEventListener('keydown', (e) => {
         //    if (e.code === 'Space') {
         //        e.preventDefault();
-        //        handleJump();
+        //        this.handleJump();
         //    }
         //});
 
@@ -391,7 +378,7 @@ class Game {
         this.started = true;
         this.running = true;
         this.lastTime = performance.now();
-        this.gameLoop();
+        requestAnimationFrame(() => this.gameLoop());
     }
 
     gameLoop() {
@@ -400,6 +387,9 @@ class Game {
         const currentTime = performance.now();
         const deltaTime = currentTime - this.lastTime;
         this.lastTime = currentTime;
+
+        if(deltaTime > 0.2)
+            this.checkPythonCommands();
 
         this.update(deltaTime);
         this.draw();
@@ -411,7 +401,6 @@ class Game {
         
         this.bird.update(deltaTime);
         
-	this.checkPythonCommands();
         if (this.started) {
             this.pipes.update(this.bird, deltaS);
             
@@ -486,6 +475,14 @@ class Game {
             localStorage.setItem('flappyBestScore', this.bird.bestScore.toString());
         }
 
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                this.handleJump();
+                removeEventListener('keydown', this);
+            }
+        });
+
         // Show game over screen
         //document.getElementById('gameOverScreen').style.display = 'block';
     }
@@ -501,10 +498,11 @@ const path_image_score      = "./images/score.png"
 function startGame() {
     game = new Game();
     game.initialize();
+    game.start();
 }
 
 function restartGame() {
-    //document.getElementById('gameOverScreen').style.display = 'none';
+    document.getElementById('gameOverScreen').style.display = 'none';
     game.initialize();
 }
 

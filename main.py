@@ -12,7 +12,7 @@ class FlappyBirdController:
         self.running = False
         self.jump_count = 0
         self.time_of_last_jump = 0
-        self.sense = SenseHat()
+        #self.sense = SenseHat()
 
     def send_jump_command(self):
         self.jump_count += 1
@@ -30,14 +30,18 @@ class FlappyBirdController:
             print(f"Error: {e}")
 
     def device_listener(self):
-        print("we here")
+        key_down = False
         while self.running:
             try:
                 if keyboard.is_pressed('space'): #self.is_shaken():
-                    self.send_jump_command()
+                    if not key_down:
+                        self.send_jump_command()
+                        key_down = True
                 elif keyboard.is_pressed('q'):
                     self.running = False
                     break
+                else:
+                    key_down = False
             except Exception as e:
                 print(f"Error: {e}")
                 break
@@ -74,7 +78,7 @@ class FlappyBirdController:
     def is_shaken(self):
         red = (255, 0, 0)
         green = (0, 255, 0)
-        acceleration = self.sense.get_accelerometer_raw()
+        #acceleration = self.sense.get_accelerometer_raw()
         x = acceleration['x']
         y = acceleration['y']
         z = acceleration['z']
@@ -84,13 +88,13 @@ class FlappyBirdController:
         z = abs(z)
 
         if x > 3 or y > 3 or z > 3:
-            self.sense.show_letter('A', red)
+            #self.sense.show_letter('A', red)
             return True;
-        self.sense.show_letter('A', green)
+        #self.sense.show_letter('A', green)
         return False;
 
 def main():
-    print("starting ******************************** here")
+    print("main.py is running...")
     controller = FlappyBirdController()
     controller.start()
       
