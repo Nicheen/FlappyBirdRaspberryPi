@@ -498,7 +498,14 @@ const path_image_score      = "./images/score.png"
 function startGame() {
     game = new Game();
     game.initialize();
-    game.start();
+
+	document.addEventListener('keydown', (e) => {
+	    if (e.code === 'Space') {
+		e.preventDefault();
+		this.handleJump();
+		removeEventListener('keydown', this);
+	    }
+	});
 }
 
 function restartGame() {

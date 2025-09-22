@@ -78,7 +78,7 @@ class FlappyBirdController:
     def is_shaken(self):
         red = (255, 0, 0)
         green = (0, 255, 0)
-        #acceleration = self.sense.get_accelerometer_raw()
+        acceleration = self.sense.get_accelerometer_raw()
         x = acceleration['x']
         y = acceleration['y']
         z = acceleration['z']
@@ -88,9 +88,9 @@ class FlappyBirdController:
         z = abs(z)
 
         if x > 3 or y > 3 or z > 3:
-            #self.sense.show_letter('A', red)
+            self.sense.show_letter('6', red)
             return True;
-        #self.sense.show_letter('A', green)
+        self.sense.clear()
         return False;
 
 def main():
