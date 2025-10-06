@@ -4,7 +4,7 @@ from pathlib import Path
 from sense_hat import SenseHat
 
 # You'll need to install this: pip install keyboard
-import keyboard
+#import keyboard
 
 class FlappyBirdController:
     def __init__(self):
@@ -37,9 +37,9 @@ class FlappyBirdController:
                     if not shaken:
                         self.send_jump_command()
                         shaken = True
-                elif keyboard.is_pressed('q'):
-                    self.running = False
-                    break
+                #elif keyboard.is_pressed('q'):
+                #    self.running = False
+                #    break
                 else:
                     shaken = False
             except Exception as e:

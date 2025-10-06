@@ -293,10 +293,16 @@ class Game {
 
         this.groundImage = new Image();
         this.groundImage.src = path_image_ground;
+
+	//Score image
+	this.scoreImage = new Image();
+	this.scoreImage.src = path_image_score;
         
         this.customFontLoaded = false;
         this.setupEventListeners();
     }
+
+    
 
     checkPythonCommands() {
         // Fire-and-forget fetch - don't await it
@@ -392,11 +398,14 @@ class Game {
             this.checkPythonCommands();
 
         this.update(deltaTime);
-        this.draw();
+        if(!this.gameOver){
+            this.draw();
+        }
         requestAnimationFrame(() => this.gameLoop());
     }
 
     update(deltaTime) {
+
         const deltaS = deltaTime / 1000;
         
         this.bird.update(deltaTime);
@@ -413,6 +422,7 @@ class Game {
             this.pipes.checkCollisions(this.bird)) {
             this.endGame();
         }
+
     }
 
     draw() {
@@ -475,6 +485,15 @@ class Game {
             localStorage.setItem('flappyBestScore', this.bird.bestScore.toString());
         }
 
+        if (this.scoreImage.complete) {
+        	this.ctx.drawImage(this.scoreImage, this.canvas.width/2 - this.scoreImage.width/2, this.canvas.height/2 - this.scoreImage.height/2);//, this.canvas.width/2, this.canvas.height/
+            if(this.bird){
+                //this.ctx.font = `46px ${fontFamily}, sans-serif`;
+                this.ctx.fillText(this.bird.score.toString(), this.canvas.width/2, this.canvas.height/2);
+                this.ctx.fillText(this.bird.bestScore.toString(), this.canvas.width/2, this.canvas.height/2 + (48*2));
+            }
+       }
+
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
@@ -489,20 +508,22 @@ class Game {
 }
 
 let game;
-const path_image_background = "./images/background.png"
-const path_image_bird       = "./images/bird.png"
-const path_image_ground     = "./images/ground.png"
-const path_image_pipe       = "./images/pipe.png"
-const path_image_score      = "./images/score.png"
+const path_image_background = "./images/background.png";
+const path_image_bird       = "./images/bird.png";
+const path_image_ground     = "./images/ground.png";
+const path_image_pipe       = "./images/pipe.png";
+const path_image_score      = "./images/score.png";
 
 function startGame() {
     game = new Game();
     game.initialize();
+    game.start();
 
 	document.addEventListener('keydown', (e) => {
 	    if (e.code === 'Space') {
+		console.log('Jump Handled');
 		e.preventDefault();
-		this.handleJump();
+		game.handleJump();
 		removeEventListener('keydown', this);
 	    }
 	});
