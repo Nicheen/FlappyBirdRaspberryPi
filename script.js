@@ -465,8 +465,12 @@ class Game {
             this.groundX = (this.groundX - deltaS * 300) % 200;
         }
 
-        if (this.bird.score >= 5) {
+        const lastDigit = Math.abs(this.bird.score % 10);
+
+        if (lastDigit >= 5 && lastDigit <= 9 && this.bird.score != 0) {
             nightMode = true;
+        } else {
+            nightMode = false;
         }
 
         // Check collisions
