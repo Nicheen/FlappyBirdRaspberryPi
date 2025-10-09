@@ -131,6 +131,10 @@ class Pipe {
         this.pipeImage = new Image();
         this.pipeImage.src = path_image_pipe;
 
+        this.pipeImageNight = new Image();//pipe image in night mode
+        this.pipeImageNight.src = path_image_pipe_night;
+        this.pipeImageNight.onload = () => { this.loaded = true; };
+
         this.x = x;
         this.gapY = gapY;
         this.gapSize = gapSize;
@@ -147,17 +151,22 @@ class Pipe {
     draw(ctx, canvasHeight) {
         // Draw pipe if loaded
         if (this.pipeImage.complete) {
+            const pipeImg = nightMode ? this.pipeImageNight : this.pipeImage;
+        
+            const drawWidth = pipeImg.naturalWidth > 0 ? pipeImg.naturalWidth : pipeWidth;
+            const drawHeight = pipeImg.naturalHeight > 0 ? pipeImg.naturalHeight : 300;
+
             // Draw the first pipe (bottom)
-            ctx.drawImage(this.pipeImage, this.x, this.gapY + this.gapSize / 2, this.pipeImage.width, this.pipeImage.height);
+            ctx.drawImage(pipeImg, this.x, this.gapY + this.gapSize / 2, drawWidth, drawHeight);
 
             // Draw the second pipe (top)
             ctx.save()
             ctx.scale(1, -1);
-            ctx.drawImage(this.pipeImage, this.x, -this.gapY + this.gapSize / 2, this.pipeImage.width, this.pipeImage.height);
+            ctx.drawImage(pipeImg, this.x, -this.gapY + this.gapSize / 2, drawWidth, drawHeight);
             ctx.restore();
         }
 
-        // Draw collision boxes in red
+        // Draw collision boxes
         if (debug) {
             this.drawCollisionBoxes(ctx, canvasHeight);
         }
@@ -329,18 +338,19 @@ class Game {
         this.backgroundImage = new Image();
         this.backgroundImage.src = path_image_background;
 
+        this.backgroundImageNight = new Image();
+        this.backgroundImageNight.src = path_image_background_night;
+
         this.groundImage = new Image();
         this.groundImage.src = path_image_ground;
 
-	//Score image
-	this.scoreImage = new Image();
-	this.scoreImage.src = path_image_score;
+        //Score image
+        this.scoreImage = new Image();
+        this.scoreImage.src = path_image_score;
         
         this.customFontLoaded = false;
         this.setupEventListeners();
     }
-
-    
 
     checkPythonCommands() {
         // Fire-and-forget fetch - don't await it
@@ -444,7 +454,6 @@ class Game {
     }
 
     update(deltaTime) {
-
         const deltaS = deltaTime / 1000;
         
         this.bird.update(deltaTime);
@@ -454,6 +463,10 @@ class Game {
             
             // Animate ground scroll like reference
             this.groundX = (this.groundX - deltaS * 300) % 200;
+        }
+
+        if (this.bird.score >= 5) {
+            nightMode = true;
         }
 
         // Check collisions
@@ -469,8 +482,14 @@ class Game {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
         // Draw background if loaded
-        if (this.backgroundImage.complete) {
-            this.ctx.drawImage(this.backgroundImage, 0, 0, this.canvas.width, this.canvas.height);
+        if (nightMode) {
+            if (this.backgroundImageNight.complete && this.backgroundImageNight.naturalWidth > 0) {
+                this.ctx.drawImage(this.backgroundImageNight, 0, 0, this.canvas.width, this.canvas.height);
+            } 
+        } else {
+            if (this.backgroundImage.complete && this.backgroundImage.naturalWidth > 0) {
+                this.ctx.drawImage(this.backgroundImage, 0, 0, this.canvas.width, this.canvas.height);
+            } 
         }
         
         // Draw pipes
@@ -481,6 +500,7 @@ class Game {
         
         // Draw ground
         this.drawGround();
+
         if (this.bird) {
             // Use custom font if loaded, otherwise fallback
             const fontFamily = this.customFontLoaded ? 'FlappyBirdFont' : 'Arial';
@@ -548,11 +568,14 @@ class Game {
 
 let game;
 let debug = false;
-const path_image_background = "./images/background.png";
-const path_image_bird       = "./images/bird.png";
-const path_image_ground     = "./images/ground.png";
-const path_image_pipe       = "./images/pipe.png";
-const path_image_score      = "./images/score.png";
+let nightMode = false;
+const path_image_background       = "./images/background.png";
+const path_image_background_night = "./images/nightbackground.jpg";
+const path_image_bird             = "./images/bird.png";
+const path_image_ground           = "./images/ground.png";
+const path_image_pipe             = "./images/pipe.png";
+const path_image_pipe_night       = "./images/pipenight.png";
+const path_image_score            = "./images/score.png";
 
 function startGame() {
     game = new Game();
