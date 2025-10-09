@@ -96,13 +96,10 @@ class Bird {
 
         if (this.rotation < 30) {
             self.birdState = 0;
-            console.log("Flying", this.rotation);
         } else if (this.rotation >= 30 && this.rotation < 60) {
             self.birdState = 1;
-            console.log("Flat", this.rotation);
         } else if (this.rotation >= 60) {
             self.birdState = 2;
-            console.log("Diving", this.rotation);
         }
 
         // Draw bird centered at its position
@@ -161,7 +158,9 @@ class Pipe {
         }
 
         // Draw collision boxes in red
-        // this.drawCollisionBoxes(ctx, canvasHeight);
+        if (debug) {
+            this.drawCollisionBoxes(ctx, canvasHeight);
+        }
     }
 
     checkCollision(bird) {
@@ -220,6 +219,11 @@ class Pipes {
         this.pipeList = [];
         this.pipeDelay = 1.5; // Seconds between pipes like reference
         this.pipeTimer = 0;
+
+        // Pipe spawn height configuration
+        this.minPipeHeight = 200;  // Minimum height for pipe gap center
+        this.maxPipeHeight = 650; // Maximum height for pipe gap center
+        this.pipeHeightRange = this.maxPipeHeight - this.minPipeHeight; // 350
     }
 
     addPipe(pipe) {
@@ -233,7 +237,7 @@ class Pipes {
         // Add new pipe when timer expires
         if (this.pipeTimer >= this.pipeDelay) {
             this.spawnPipe(bird.canvas ? bird.canvas.width : 800);
-            this.pipeTimer = 0;
+            this.pipeTimer -= this.pipeDelay;
         }
         
         // Move all pipes and check scoring
@@ -254,13 +258,46 @@ class Pipes {
 
     spawnPipe(canvasWidth) {
         // Spawn pipe like reference with random gap position
-        const gapY = (Math.random() * 350) + 50; // Random between 50-400
+        const gapY = (Math.random() * this.pipeHeightRange) + this.minPipeHeight;
         const pipe = new Pipe(canvasWidth + 100, gapY, 200);
         this.addPipe(pipe);
     }
 
     draw(ctx, canvasHeight) {
         this.pipeList.forEach(pipe => pipe.draw(ctx, canvasHeight));
+
+        if (debug) {
+            this.drawPipeSpawnHeights(ctx, canvasHeight);
+        }
+    }
+
+    drawPipeSpawnHeights(ctx, canvasHeight) {
+        ctx.save();
+
+        ctx.strokeStyle = 'blue';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+
+        // Draw minimum spawn height line
+        ctx.beginPath();
+        ctx.moveTo(0, this.minPipeHeight);
+        ctx.lineTo(ctx.canvas.width, this.minPipeHeight);
+        ctx.stroke();
+
+        // Draw maximum spawn height line
+        ctx.beginPath();
+        ctx.moveTo(0, this.maxPipeHeight);
+        ctx.lineTo(ctx.canvas.width, this.maxPipeHeight);
+        ctx.stroke();
+
+        // Draw labels
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'blue';
+        ctx.font = '14px Arial';
+        ctx.fillText(`Min: ${this.minPipeHeight}`, 40, this.minPipeHeight - 5);
+        ctx.fillText(`Max: ${this.maxPipeHeight}`, 40, this.maxPipeHeight + 15);
+
+        ctx.restore();
     }
 
     checkCollisions(bird) {
@@ -395,9 +432,10 @@ class Game {
         const deltaTime = currentTime - this.lastTime;
         this.lastTime = currentTime;
 
-        if(deltaTime > 0.2)
+        if(deltaTime > 0.2) {
             this.checkPythonCommands();
-
+        }
+            
         this.update(deltaTime);
         if(!this.gameOver){
             this.draw();
@@ -490,8 +528,8 @@ class Game {
         	this.ctx.drawImage(this.scoreImage, this.canvas.width/2 - this.scoreImage.width/2, this.canvas.height/2 - this.scoreImage.height/2);//, this.canvas.width/2, this.canvas.height/
             if(this.bird){
                 //this.ctx.font = `46px ${fontFamily}, sans-serif`;
-                this.ctx.fillText(this.bird.score.toString(), this.canvas.width/2, this.canvas.height/2);
-                this.ctx.fillText(this.bird.bestScore.toString(), this.canvas.width/2, this.canvas.height/2 + (48*2));
+                this.ctx.fillText(this.bird.score.toString(), this.canvas.width/2, this.canvas.height/2 - 12);
+                this.ctx.fillText(this.bird.bestScore.toString(), this.canvas.width/2, this.canvas.height/2 + (48*2) - 24);
             }
        }
 
@@ -509,6 +547,7 @@ class Game {
 }
 
 let game;
+let debug = false;
 const path_image_background = "./images/background.png";
 const path_image_bird       = "./images/bird.png";
 const path_image_ground     = "./images/ground.png";
@@ -522,11 +561,16 @@ function startGame() {
 
 	document.addEventListener('keydown', (e) => {
 	    if (e.code === 'Space') {
-		console.log('Jump Handled');
-		e.preventDefault();
-		game.handleJump();
-		removeEventListener('keydown', this);
+            console.log('Jump Handled');
+            e.preventDefault();
+            game.handleJump();
 	    }
+
+        if (e.code === 'KeyD') {
+            e.preventDefault();
+            debug = !debug;
+            console.log('Debug mode:', debug);
+        }
 	});
 }
 
