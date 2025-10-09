@@ -11,7 +11,7 @@ class Bird {
         this.jumpAmount = 80; // How high the jump goes
         this.jumpTime = 266; // Duration of jump in ms
         this.fallSpeed = 500; // Pixels per second when falling
-        this.maxRotationUp = -20; // Max upward rotation in degrees
+        this.maxRotationUp = -40; // Max upward rotation in degrees
         this.maxRotationDown = 90; // Max downward rotation in degrees
         
         // Animation states
@@ -22,6 +22,7 @@ class Bird {
         // Pre-load bird image
         this.birdimages = new Image();
         this.birdimages.src = path_image_bird;
+        this.birdstate = 0;
     }
 
     update(deltaTime) {
@@ -87,37 +88,37 @@ class Bird {
     draw(ctx) {
         ctx.save();
         
-        // Translate and rotate like reference
+        // Translate to bird position
         ctx.translate(this.position.x, this.position.y);
-        ctx.rotate(this.rotation * Math.PI / 180); // Convert degrees to radians
-        
-        // Draw bird body
-        ctx.fillStyle = '#FFD700';
-        ctx.beginPath();
-        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Draw bird eye
-        ctx.fillStyle = '#000';
-        ctx.beginPath();
-        ctx.arc(8, -5, 3, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Draw beak
-        ctx.fillStyle = '#FF8C00';
-        ctx.beginPath();
-        ctx.moveTo(this.radius, 0);
-        ctx.lineTo(this.radius + 10, -3);
-        ctx.lineTo(this.radius + 10, 3);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Add wing detail
-        ctx.fillStyle = '#FFA500';
-        ctx.beginPath();
-        ctx.ellipse(-5, 0, 8, 12, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
+
+        // Rotate based on bird rotation
+        ctx.rotate(this.rotation * Math.PI / 180);
+
+        if (this.rotation < 30) {
+            self.birdState = 0;
+            console.log("Flying", this.rotation);
+        } else if (this.rotation >= 30 && this.rotation < 60) {
+            self.birdState = 1;
+            console.log("Flat", this.rotation);
+        } else if (this.rotation >= 60) {
+            self.birdState = 2;
+            console.log("Diving", this.rotation);
+        }
+
+        // Draw bird centered at its position
+        if (this.birdimages.complete) {
+            const birdWidth = this.birdimages.width / 3;
+            const birdHeight = this.birdimages.height;
+            const birdSizeRatio = birdWidth / birdHeight;
+            ctx.drawImage(this.birdimages, self.birdState * birdWidth, 0, birdWidth, birdHeight, -this.radius, -this.radius, this.radius * 2 * birdSizeRatio, this.radius * 2);
+        } else {
+            // Fallback: draw a circle if image isn't loaded yet
+            ctx.fillStyle = 'yellow';
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
         ctx.restore();
     }
 
