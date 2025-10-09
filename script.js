@@ -11,7 +11,7 @@ class Bird {
         this.jumpAmount = 80; // How high the jump goes
         this.jumpTime = 266; // Duration of jump in ms
         this.fallSpeed = 500; // Pixels per second when falling
-        this.maxRotationUp = -20; // Max upward rotation in degrees
+        this.maxRotationUp = -40; // Max upward rotation in degrees
         this.maxRotationDown = 90; // Max downward rotation in degrees
         
         // Animation states
@@ -22,6 +22,7 @@ class Bird {
         // Pre-load bird image
         this.birdimages = new Image();
         this.birdimages.src = path_image_bird;
+        this.birdstate = 0;
     }
 
     update(deltaTime) {
@@ -87,37 +88,37 @@ class Bird {
     draw(ctx) {
         ctx.save();
         
-        // Translate and rotate like reference
+        // Translate to bird position
         ctx.translate(this.position.x, this.position.y);
-        ctx.rotate(this.rotation * Math.PI / 180); // Convert degrees to radians
-        
-        // Draw bird body
-        ctx.fillStyle = '#FFD700';
-        ctx.beginPath();
-        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Draw bird eye
-        ctx.fillStyle = '#000';
-        ctx.beginPath();
-        ctx.arc(8, -5, 3, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Draw beak
-        ctx.fillStyle = '#FF8C00';
-        ctx.beginPath();
-        ctx.moveTo(this.radius, 0);
-        ctx.lineTo(this.radius + 10, -3);
-        ctx.lineTo(this.radius + 10, 3);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Add wing detail
-        ctx.fillStyle = '#FFA500';
-        ctx.beginPath();
-        ctx.ellipse(-5, 0, 8, 12, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
+
+        // Rotate based on bird rotation
+        ctx.rotate(this.rotation * Math.PI / 180);
+
+        if (this.rotation < 30) {
+            self.birdState = 0;
+            console.log("Flying", this.rotation);
+        } else if (this.rotation >= 30 && this.rotation < 60) {
+            self.birdState = 1;
+            console.log("Flat", this.rotation);
+        } else if (this.rotation >= 60) {
+            self.birdState = 2;
+            console.log("Diving", this.rotation);
+        }
+
+        // Draw bird centered at its position
+        if (this.birdimages.complete) {
+            const birdWidth = this.birdimages.width / 3;
+            const birdHeight = this.birdimages.height;
+            const birdSizeRatio = birdWidth / birdHeight;
+            ctx.drawImage(this.birdimages, self.birdState * birdWidth, 0, birdWidth, birdHeight, -this.radius, -this.radius, this.radius * 2 * birdSizeRatio, this.radius * 2);
+        } else {
+            // Fallback: draw a circle if image isn't loaded yet
+            ctx.fillStyle = 'yellow';
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
         ctx.restore();
     }
 
@@ -293,10 +294,16 @@ class Game {
 
         this.groundImage = new Image();
         this.groundImage.src = path_image_ground;
+
+	//Score image
+	this.scoreImage = new Image();
+	this.scoreImage.src = path_image_score;
         
         this.customFontLoaded = false;
         this.setupEventListeners();
     }
+
+    
 
     checkPythonCommands() {
         // Fire-and-forget fetch - don't await it
@@ -392,11 +399,14 @@ class Game {
             this.checkPythonCommands();
 
         this.update(deltaTime);
-        this.draw();
+        if(!this.gameOver){
+            this.draw();
+        }
         requestAnimationFrame(() => this.gameLoop());
     }
 
     update(deltaTime) {
+
         const deltaS = deltaTime / 1000;
         
         this.bird.update(deltaTime);
@@ -413,6 +423,7 @@ class Game {
             this.pipes.checkCollisions(this.bird)) {
             this.endGame();
         }
+
     }
 
     draw() {
@@ -475,6 +486,15 @@ class Game {
             localStorage.setItem('flappyBestScore', this.bird.bestScore.toString());
         }
 
+        if (this.scoreImage.complete) {
+        	this.ctx.drawImage(this.scoreImage, this.canvas.width/2 - this.scoreImage.width/2, this.canvas.height/2 - this.scoreImage.height/2);//, this.canvas.width/2, this.canvas.height/
+            if(this.bird){
+                //this.ctx.font = `46px ${fontFamily}, sans-serif`;
+                this.ctx.fillText(this.bird.score.toString(), this.canvas.width/2, this.canvas.height/2);
+                this.ctx.fillText(this.bird.bestScore.toString(), this.canvas.width/2, this.canvas.height/2 + (48*2));
+            }
+       }
+
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
@@ -489,20 +509,22 @@ class Game {
 }
 
 let game;
-const path_image_background = "./images/background.png"
-const path_image_bird       = "./images/bird.png"
-const path_image_ground     = "./images/ground.png"
-const path_image_pipe       = "./images/pipe.png"
-const path_image_score      = "./images/score.png"
+const path_image_background = "./images/background.png";
+const path_image_bird       = "./images/bird.png";
+const path_image_ground     = "./images/ground.png";
+const path_image_pipe       = "./images/pipe.png";
+const path_image_score      = "./images/score.png";
 
 function startGame() {
     game = new Game();
     game.initialize();
+    game.start();
 
 	document.addEventListener('keydown', (e) => {
 	    if (e.code === 'Space') {
+		console.log('Jump Handled');
 		e.preventDefault();
-		this.handleJump();
+		game.handleJump();
 		removeEventListener('keydown', this);
 	    }
 	});
