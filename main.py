@@ -13,6 +13,16 @@ class FlappyBirdController:
         self.jump_count = 0
         self.time_of_last_jump = 0
         self.sense = SenseHat()
+        self.sense.stick.direction_down = self.j_jump
+        self.sense.stick.direction_up = self.j_jump
+        self.sense.stick.direction_middle = self.j_jump
+        self.time = time.time()
+
+    def j_jump(self):
+        if self.running:
+         if abs(self.time - time.time()) > 0.15: 
+          self.send_jump_command()
+          self.time = time.time()
 
     def send_jump_command(self):
         self.jump_count += 1
@@ -87,7 +97,7 @@ class FlappyBirdController:
         y = abs(y)
         z = abs(z)
 
-        if x > 3 or y > 3 or z > 3:
+        if x > 1.5 or y > 1.5 or z > 1.5:
             self.sense.show_letter('6', red)
             return True;
         self.sense.clear()
