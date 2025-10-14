@@ -641,8 +641,8 @@ class HighscoreTracker {
 
 // Fill these in with our database API key and Supabase URL.
 // Make sure that the API key is the one that we can use publicly.
-const SUPABASE_URL = 'https://your-supabase-url.supabase.co';
-const SUPABASE_ANON_KEY = 'your-anon-key';
+const SUPABASE_URL = 'https://kkobhqxhpmstzkxteqet.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtrb2JocXhocG1zdHpreHRlcWV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzMzY3MTAsImV4cCI6MjA3NTkxMjcxMH0.IoFHhUlZlpis1jasRcwMIURuueA62IdOAwVNB30o2zs';
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
