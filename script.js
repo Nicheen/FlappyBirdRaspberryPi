@@ -570,6 +570,82 @@ class Game {
     }
 }
 
+class HighscoreTracker {
+    constructor() {
+        this.currentUser = null;
+        this.initAuth()
+    }
+
+    async initAuth() {
+        const { data } = await supabase.auth.getSession();
+        this.currentUser = data.session?.user || null;
+
+        supabase.auth.onAuthStateChange((event, session) => {
+            this.currentUser = session?.user || null;
+            if (event === 'SIGNED_IN') {
+                updateUI();
+            }
+        });
+    }
+
+    async signInWithGoogle() {
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: window.location.origin
+            }
+        });
+        if (error) console.error('Error during sign-in:', error.message);
+    }
+
+    async submitScore(score) {
+        if (!this.currentUser) return null;
+
+        const { data, error } = await supabase
+            .from('highscores')
+            .insert([{ 
+                user_id: this.currentUser.id,
+                username: this.currentUser.user_metadata?.full_name || 
+                        this.currentUser.email.split('@')[0],
+                score: score
+            }])
+            .select();
+
+        if (error) {
+            console.error('Error submitting score:', error.message);
+            return null;
+        }
+
+        return data[0];
+    }
+
+    async getTopScores(limit = 5) {
+        const { data, error } = await supabase
+            .from('highscores')
+            .select('username, score, created_at')
+            .order('score', { ascending: false })
+            .limit(limit);
+        
+        if (error) {
+            console.error('Error fetching top scores:', error.message);
+            return [];
+        }
+
+        return data;
+    }
+
+    isLoggedIn() {
+        return this.currentUser !== null;
+    }
+}
+
+// Fill these in with our database API key and Supabase URL.
+// Make sure that the API key is the one that we can use publicly.
+const SUPABASE_URL = 'https://your-supabase-url.supabase.co';
+const SUPABASE_ANON_KEY = 'your-anon-key';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 let game;
 let debug = false;
 let nightMode = false;
@@ -582,6 +658,8 @@ const path_image_pipe_night       = "./images/pipenight.png";
 const path_image_score            = "./images/score.png";
 
 function startGame() {
+    tracker = new HighscoreTracker();
+
     game = new Game();
     game.initialize();
     game.start();
