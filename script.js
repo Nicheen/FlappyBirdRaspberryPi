@@ -149,12 +149,13 @@ class Pipe {
     }
 
     draw(ctx, canvasHeight) {
-        // Draw pipe if loaded
-        if (this.pipeImage.complete) {
-            const pipeImg = nightMode ? this.pipeImageNight : this.pipeImage;
-        
-            const drawWidth = pipeImg.naturalWidth > 0 ? pipeImg.naturalWidth : pipeWidth;
-            const drawHeight = pipeImg.naturalHeight > 0 ? pipeImg.naturalHeight : 300;
+        // Select the appropriate pipe image based on night mode
+        const pipeImg = nightMode ? this.pipeImageNight : this.pipeImage;
+
+        // Only draw if the selected pipe image is loaded
+        if (pipeImg.complete && pipeImg.naturalWidth > 0) {
+            const drawWidth = pipeImg.naturalWidth;
+            const drawHeight = pipeImg.naturalHeight;
 
             // Draw the first pipe (bottom)
             ctx.drawImage(pipeImg, this.x, this.gapY + this.gapSize / 2, drawWidth, drawHeight);
@@ -344,6 +345,9 @@ class Game {
         this.groundImage = new Image();
         this.groundImage.src = path_image_ground;
 
+        this.groundImageNight = new Image();
+        this.groundImageNight.src = path_image_ground_night;
+
         //Score image
         this.scoreImage = new Image();
         this.scoreImage.src = path_image_score;
@@ -484,24 +488,24 @@ class Game {
     draw() {
         // Clear canvas first
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
+
         // Draw background if loaded
         if (nightMode) {
             if (this.backgroundImageNight.complete && this.backgroundImageNight.naturalWidth > 0) {
                 this.ctx.drawImage(this.backgroundImageNight, 0, 0, this.canvas.width, this.canvas.height);
-            } 
+            }
         } else {
             if (this.backgroundImage.complete && this.backgroundImage.naturalWidth > 0) {
                 this.ctx.drawImage(this.backgroundImage, 0, 0, this.canvas.width, this.canvas.height);
-            } 
+            }
         }
-        
+
         // Draw pipes
         this.pipes.draw(this.ctx, this.canvas.height);
-        
+
         // Draw bird
         this.bird.draw(this.ctx);
-        
+
         // Draw ground
         this.drawGround();
 
@@ -512,6 +516,16 @@ class Game {
             this.ctx.textAlign = "center";
             this.ctx.fillStyle = "#FFFFFF";
             this.ctx.fillText(this.bird.score.toString(), this.canvas.width / 2, this.canvas.height / 5);
+
+            // Update highscore display
+            this.updateHighscoreDisplay();
+        }
+    }
+
+    updateHighscoreDisplay() {
+        const highscoreValue = document.getElementById('highscoreValue');
+        if (highscoreValue && this.bird) {
+            highscoreValue.textContent = this.bird.bestScore;
         }
     }
 
@@ -533,7 +547,11 @@ class Game {
             // Draw only the tiles we need
             for (let i = 0; i <= tilesNeeded; i++) {
                 const x = startX + (i * tileWidth);
-                this.ctx.drawImage(this.groundImage, x, groundY, tileWidth, groundHeight);
+                if (nightMode) {
+                    this.ctx.drawImage(this.groundImageNight, x, groundY, tileWidth, groundHeight);
+                } else {
+                    this.ctx.drawImage(this.groundImage, x, groundY, tileWidth, groundHeight);
+                }
             }
         }
     }
@@ -541,11 +559,22 @@ class Game {
     endGame() {
         this.gameOver = true;
         this.running = false;
-        
+
         // Update best score
         if (this.bird.score > this.bird.bestScore) {
             this.bird.bestScore = this.bird.score;
             localStorage.setItem('flappyBestScore', this.bird.bestScore.toString());
+            // Update highscore display immediately
+            this.updateHighscoreDisplay();
+        }
+
+        // Submit score to leaderboard if user is logged in
+        if (tracker && tracker.isLoggedIn() && this.bird.score > 0) {
+            tracker.submitScore(this.bird.score).then(result => {
+                if (result) {
+                    console.log('Score submitted successfully:', result);
+                }
+            });
         }
 
         if (this.scoreImage.complete) {
@@ -577,46 +606,216 @@ class HighscoreTracker {
     }
 
     async initAuth() {
-        const { data } = await supabase.auth.getSession();
+        console.log('🔐 [AUTH] Initializing authentication...');
+        console.log('🔐 [AUTH] Supabase URL:', SUPABASE_URL);
+        console.log('🔐 [AUTH] Current URL:', window.location.href);
+
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error) {
+            console.error('❌ [AUTH] Error getting session:', error);
+        }
+
         this.currentUser = data.session?.user || null;
+        console.log('🔐 [AUTH] Current user:', this.currentUser ? this.currentUser.email : 'Not logged in');
+
+        // Update UI on initial load
+        this.updateUI();
+
+        // If user is already logged in, hide overlay and start game
+        if (this.currentUser) {
+            console.log('✅ [AUTH] User already logged in, starting game');
+            this.hideLoginOverlay();
+            startGameLoop();
+        } else {
+            console.log('⚠️ [AUTH] No user session found');
+        }
 
         supabase.auth.onAuthStateChange((event, session) => {
+            console.log('🔄 [AUTH] Auth state changed:', event);
+            console.log('🔄 [AUTH] Session:', session ? 'Active' : 'None');
+
             this.currentUser = session?.user || null;
             if (event === 'SIGNED_IN') {
-                updateUI();
+                console.log('✅ [AUTH] User signed in:', this.currentUser.email);
+                this.updateUI();
+                this.hideLoginOverlay();
+                // Start the game after successful login
+                startGameLoop();
+            } else if (event === 'SIGNED_OUT') {
+                console.log('👋 [AUTH] User signed out');
+                this.updateUI();
             }
         });
     }
 
+    updateUI() {
+        const userInfo = document.getElementById('userInfo');
+        const userName = document.getElementById('userName');
+
+        if (this.currentUser) {
+            // User is logged in
+            const displayName = this.currentUser.user_metadata?.full_name ||
+                              this.currentUser.email?.split('@')[0] ||
+                              'User';
+            userName.textContent = displayName;
+            userInfo.style.display = 'block';
+        } else {
+            // User is not logged in
+            userInfo.style.display = 'none';
+        }
+    }
+
+    hideLoginOverlay() {
+        const loginOverlay = document.getElementById('loginOverlay');
+        if (loginOverlay) {
+            loginOverlay.style.display = 'none';
+        }
+    }
+
+    showLoginOverlay() {
+        const loginOverlay = document.getElementById('loginOverlay');
+        if (loginOverlay) {
+            loginOverlay.style.display = 'flex';
+        }
+    }
+
     async signInWithGoogle() {
-        const { error } = await supabase.auth.signInWithOAuth({
+        console.log('🚀 [AUTH] Starting Google sign-in...');
+        console.log('🚀 [AUTH] Redirect URL will be:', window.location.origin);
+
+        const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
                 redirectTo: window.location.origin
             }
         });
-        if (error) console.error('Error during sign-in:', error.message);
+
+        if (error) {
+            console.error('❌ [AUTH] Error during sign-in:', error);
+            console.error('❌ [AUTH] Error message:', error.message);
+            console.error('❌ [AUTH] Error details:', error);
+            alert('Login failed: ' + error.message);
+        } else {
+            console.log('✅ [AUTH] OAuth initiated successfully');
+            console.log('✅ [AUTH] OAuth data:', data);
+            console.log('✅ [AUTH] Redirecting to Google...');
+        }
+    }
+
+    async signOut() {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error('Error during sign-out:', error.message);
+        } else {
+            this.showLoginOverlay();
+        }
+    }
+
+    async resetScore() {
+        if (!this.currentUser) {
+            console.log('Cannot reset score: Not logged in');
+            return false;
+        }
+
+        const confirmed = confirm('Are you sure you want to reset your highscore in the database? This cannot be undone!');
+        if (!confirmed) {
+            return false;
+        }
+
+        const { error } = await supabase
+            .from('highscores')
+            .delete()
+            .eq('user_id', this.currentUser.id);
+
+        if (error) {
+            console.error('Error resetting score:', error.message);
+            alert('Failed to reset score: ' + error.message);
+            return false;
+        }
+
+        console.log('Score reset successfully in database');
+        alert('Your highscore has been reset in the database!');
+        return true;
+    }
+
+    resetLocalScore() {
+        const confirmed = confirm('Are you sure you want to reset your local highscore? This cannot be undone!');
+        if (!confirmed) {
+            return false;
+        }
+
+        localStorage.removeItem('flappyBestScore');
+        if (game && game.bird) {
+            game.bird.bestScore = 0;
+            game.updateHighscoreDisplay();
+        }
+
+        console.log('Local score reset successfully');
+        alert('Your local highscore has been reset!');
+        return true;
     }
 
     async submitScore(score) {
         if (!this.currentUser) return null;
 
-        const { data, error } = await supabase
-            .from('highscores')
-            .insert([{ 
-                user_id: this.currentUser.id,
-                username: this.currentUser.user_metadata?.full_name || 
-                        this.currentUser.email.split('@')[0],
-                score: score
-            }])
-            .select();
+        const username = this.currentUser.user_metadata?.full_name ||
+                        this.currentUser.email.split('@')[0];
 
-        if (error) {
-            console.error('Error submitting score:', error.message);
-            return null;
+        // First, check if user already has a highscore entry
+        const { data: existingData, error: fetchError } = await supabase
+            .from('highscores')
+            .select('score')
+            .eq('user_id', this.currentUser.id)
+            .single();
+
+        if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows returned
+            console.error('Error fetching existing score:', fetchError.message);
         }
 
-        return data[0];
+        // If user has an existing score, only update if new score is higher
+        if (existingData) {
+            if (score > existingData.score) {
+                // Update with new high score
+                const { data, error } = await supabase
+                    .from('highscores')
+                    .update({
+                        score: score,
+                        username: username // Update username in case it changed
+                    })
+                    .eq('user_id', this.currentUser.id)
+                    .select();
+
+                if (error) {
+                    console.error('Error updating score:', error.message);
+                    return null;
+                }
+
+                console.log('New high score! Updated from', existingData.score, 'to', score);
+                return data[0];
+            } else {
+                console.log('Score not higher than existing high score:', existingData.score);
+                return null;
+            }
+        } else {
+            // No existing entry, insert new one
+            const { data, error } = await supabase
+                .from('highscores')
+                .insert([{
+                    user_id: this.currentUser.id,
+                    username: username,
+                    score: score
+                }])
+                .select();
+
+            if (error) {
+                console.error('Error inserting score:', error.message);
+                return null;
+            }
+
+            console.log('First high score submitted:', score);
+            return data[0];
+        }
     }
 
     async getTopScores(limit = 5) {
@@ -625,13 +824,129 @@ class HighscoreTracker {
             .select('username, score, created_at')
             .order('score', { ascending: false })
             .limit(limit);
-        
+
         if (error) {
             console.error('Error fetching top scores:', error.message);
             return [];
         }
 
         return data;
+    }
+
+    async getUserRank() {
+        if (!this.currentUser) return null;
+
+        // Get all scores ordered by score descending
+        const { data, error } = await supabase
+            .from('highscores')
+            .select('user_id, username, score')
+            .order('score', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching user rank:', error.message);
+            return null;
+        }
+
+        // Find the user's position in the list
+        const userIndex = data.findIndex(entry => entry.user_id === this.currentUser.id);
+
+        if (userIndex === -1) {
+            return null; // User not found in leaderboard
+        }
+
+        return {
+            rank: userIndex + 1,
+            username: data[userIndex].username,
+            score: data[userIndex].score
+        };
+    }
+
+    async displayLeaderboard() {
+        const leaderboardList = document.getElementById('leaderboardList');
+        const userRankEntry = document.getElementById('userRankEntry');
+        const userRankSeparator = document.getElementById('userRankSeparator');
+
+        // Clear existing content
+        leaderboardList.innerHTML = '';
+        userRankEntry.style.display = 'none';
+        userRankSeparator.style.display = 'none';
+
+        // Get top 5 scores
+        const topScores = await this.getTopScores(5);
+
+        // Display top 5 or message if empty
+        if (topScores.length === 0) {
+            leaderboardList.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">No scores yet. Be the first to set a highscore!</div>';
+        } else {
+            topScores.forEach((entry, index) => {
+                const rank = index + 1;
+                const entryElement = this.createLeaderboardEntry(rank, entry.username, entry.score);
+                leaderboardList.appendChild(entryElement);
+            });
+        }
+
+        // Get user's rank if logged in
+        if (this.currentUser) {
+            const userRank = await this.getUserRank();
+
+            if (userRank && userRank.rank > 5) {
+                // User is not in top 5, show separator and user's entry
+                userRankSeparator.style.display = 'block';
+                userRankEntry.style.display = 'flex';
+
+                // Create user's entry
+                const userEntryContent = this.createLeaderboardEntryContent(
+                    userRank.rank,
+                    userRank.username + ' (You)',
+                    userRank.score
+                );
+                userRankEntry.innerHTML = userEntryContent;
+            }
+        } else {
+            // User is not logged in, show message
+            userRankSeparator.style.display = 'block';
+            userRankEntry.style.display = 'flex';
+            userRankEntry.innerHTML = `
+                <div style="text-align: center; width: 100%; padding: 10px; color: #666; font-size: 14px;">
+                    Sign in to track your rank and compete!
+                </div>
+            `;
+        }
+    }
+
+    createLeaderboardEntry(rank, username, score) {
+        const entry = document.createElement('div');
+        entry.className = 'leaderboard-entry';
+
+        // Add special styling for top 3
+        if (rank <= 3) {
+            entry.classList.add(`rank-${rank}`);
+        }
+
+        entry.innerHTML = this.createLeaderboardEntryContent(rank, username, score);
+
+        return entry;
+    }
+
+    createLeaderboardEntryContent(rank, username, score) {
+        return `
+            <div class="rank-number">${rank}</div>
+            <div class="player-info">
+                <div class="player-name">${username}</div>
+            </div>
+            <div class="player-score">${score}</div>
+        `;
+    }
+
+    showLeaderboard() {
+        const leaderboardOverlay = document.getElementById('leaderboardOverlay');
+        leaderboardOverlay.style.display = 'flex';
+        this.displayLeaderboard();
+    }
+
+    hideLeaderboard() {
+        const leaderboardOverlay = document.getElementById('leaderboardOverlay');
+        leaderboardOverlay.style.display = 'none';
     }
 
     isLoggedIn() {
@@ -647,22 +962,37 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let game;
+let tracker;
 let debug = false;
 let nightMode = false;
 const path_image_background       = "./images/background.png";
-const path_image_background_night = "./images/nightbackground.jpg";
-const path_image_bird             = "./images/bird.png";
-const path_image_ground           = "./images/ground.png";
+const path_image_background_night = "./images/background_night.jpg";
 const path_image_pipe             = "./images/pipe.png";
-const path_image_pipe_night       = "./images/pipenight.png";
+const path_image_pipe_night       = "./images/pipe_night.png";
+const path_image_ground           = "./images/ground.png";
+const path_image_ground_night     = "./images/ground_night.png";
+const path_image_bird             = "./images/bird.png";
 const path_image_score            = "./images/score.png";
+
+function initializeGame() {
+    // Initialize game without starting it
+    game = new Game();
+    game.initialize();
+    // Don't start the game loop yet
+}
+
+function startGameLoop() {
+    // Actually start the game loop
+    if (game && !game.running) {
+        game.start();
+    }
+}
 
 function startGame() {
     tracker = new HighscoreTracker();
 
-    game = new Game();
-    game.initialize();
-    game.start();
+    // Initialize game but don't start it yet
+    initializeGame();
 
 	document.addEventListener('keydown', (e) => {
 	    if (e.code === 'Space') {
@@ -675,8 +1005,89 @@ function startGame() {
             e.preventDefault();
             debug = !debug;
             console.log('Debug mode:', debug);
+
+            if (debug) {
+                console.log('%c=== DEBUG MODE ENABLED ===', 'color: #4CAF50; font-weight: bold; font-size: 14px;');
+                console.log('%cDebug Commands:', 'color: #2196F3; font-weight: bold;');
+                console.log('  Press R - Reset local highscore');
+                console.log('  Press Shift+R - Reset database highscore (requires login)');
+                console.log('  Press D - Toggle debug mode off');
+            } else {
+                console.log('%c=== DEBUG MODE DISABLED ===', 'color: #f44336; font-weight: bold; font-size: 14px;');
+            }
+        }
+
+        // Debug mode: Reset local score with R
+        if (e.code === 'KeyR' && debug && !e.shiftKey) {
+            e.preventDefault();
+            tracker.resetLocalScore();
+        }
+
+        // Debug mode: Reset database score with Shift+R
+        if (e.code === 'KeyR' && debug && e.shiftKey) {
+            e.preventDefault();
+            tracker.resetScore();
         }
 	});
+
+    // Setup login/logout button event listeners
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    const skipLoginBtn = document.getElementById('skipLoginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    if (googleLoginBtn) {
+        googleLoginBtn.addEventListener('click', () => {
+            tracker.signInWithGoogle();
+            // Game will start after successful login via auth state change
+        });
+    }
+
+    if (skipLoginBtn) {
+        skipLoginBtn.addEventListener('click', () => {
+            tracker.hideLoginOverlay();
+            // Start the game when user skips login
+            startGameLoop();
+        });
+    }
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            tracker.signOut();
+        });
+    }
+
+    // Setup leaderboard button event listeners
+    const leaderboardBtn = document.getElementById('leaderboardBtn');
+    const closeLeaderboardBtn = document.getElementById('closeLeaderboardBtn');
+    const refreshLeaderboardBtn = document.getElementById('refreshLeaderboardBtn');
+    const leaderboardOverlay = document.getElementById('leaderboardOverlay');
+
+    if (leaderboardBtn) {
+        leaderboardBtn.addEventListener('click', () => {
+            tracker.showLeaderboard();
+        });
+    }
+
+    if (closeLeaderboardBtn) {
+        closeLeaderboardBtn.addEventListener('click', () => {
+            tracker.hideLeaderboard();
+        });
+    }
+
+    if (refreshLeaderboardBtn) {
+        refreshLeaderboardBtn.addEventListener('click', () => {
+            tracker.displayLeaderboard();
+        });
+    }
+
+    // Close leaderboard when clicking outside the container
+    if (leaderboardOverlay) {
+        leaderboardOverlay.addEventListener('click', (e) => {
+            if (e.target === leaderboardOverlay) {
+                tracker.hideLeaderboard();
+            }
+        });
+    }
 }
 
 function restartGame() {
