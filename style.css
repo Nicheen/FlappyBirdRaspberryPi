@@ -191,50 +191,14 @@ html, body {
     transform: scale(0.95);
 }
 
-/* Highscore Display Styles */
-.highscore-display {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 100;
-}
-
-.highscore-content {
-    background: rgba(255, 255, 255, 0.95);
-    padding: 12px 20px;
-    border-radius: 15px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    min-width: 80px;
-}
-
-.highscore-label {
-    color: #999;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    font-family: Arial, sans-serif;
-}
-
-.highscore-value {
-    color: #333;
-    font-size: 24px;
-    font-weight: 700;
-    font-family: 'FlappyBirdFont', Arial, sans-serif;
-    line-height: 1;
-}
-
 /* Leaderboard Button Styles */
 .leaderboard-btn {
     position: absolute;
     bottom: 20px;
     right: 20px;
     z-index: 100;
-    width: 50px;
-    height: 50px;
+    width: 100px;
+    height: 100px;
     background: rgba(255, 215, 0, 0.95);
     border: none;
     border-radius: 50%;
@@ -245,6 +209,10 @@ html, body {
     justify-content: center;
     transition: all 0.3s ease;
     color: #333;
+}
+
+.leaderboard-btn .material-symbols-outlined {
+    font-size: 40px;
 }
 
 .leaderboard-btn:hover {
@@ -502,6 +470,10 @@ html, body {
         right: 10px;
         width: 45px;
         height: 45px;
+    }
+
+    .leaderboard-btn .material-symbols-outlined {
+        font-size: 20px;
     }
 
     .leaderboard-container {

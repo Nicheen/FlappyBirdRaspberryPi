@@ -380,7 +380,7 @@ class Game {
         //setTimeout(() => this.checkPythonCommands(), pollInterval);
     }
 
-    handleJump() {
+    async handleJump() {
         if (!this.gameOver) {
             this.bird.jump();
             if (!this.started) {
@@ -388,7 +388,7 @@ class Game {
             }
         }
         else{
-            this.initialize();
+            await this.initialize();
             this.start();
         }
     }
@@ -405,7 +405,7 @@ class Game {
         }
     }
 
-    initialize() {
+    async initialize() {
         this.bird.position = { x: 100, y: 250 };
         this.bird.velocity = { x: 0, y: 0 };
         this.bird.rotation = 0;
@@ -417,6 +417,9 @@ class Game {
         this.started = false;
         this.lastTime = 0;
         this.groundX = 0;
+
+        // Load custom font
+        await this.loadCustomFont();
     }
 
     setupEventListeners() {
@@ -580,7 +583,11 @@ class Game {
         if (this.scoreImage.complete) {
         	this.ctx.drawImage(this.scoreImage, this.canvas.width/2 - this.scoreImage.width/2, this.canvas.height/2 - this.scoreImage.height/2);//, this.canvas.width/2, this.canvas.height/
             if(this.bird){
-                //this.ctx.font = `46px ${fontFamily}, sans-serif`;
+                // Use custom font if loaded, otherwise fallback
+                const fontFamily = this.customFontLoaded ? 'FlappyBirdFont' : 'Arial';
+                this.ctx.font = `48px ${fontFamily}, sans-serif`;
+                this.ctx.textAlign = "center";
+                this.ctx.fillStyle = "#FFFFFF";
                 this.ctx.fillText(this.bird.score.toString(), this.canvas.width/2, this.canvas.height/2 - 12);
                 this.ctx.fillText(this.bird.bestScore.toString(), this.canvas.width/2, this.canvas.height/2 + (48*2) - 24);
             }
@@ -974,10 +981,10 @@ const path_image_ground_night     = "./images/ground_night.png";
 const path_image_bird             = "./images/bird.png";
 const path_image_score            = "./images/score.png";
 
-function initializeGame() {
+async function initializeGame() {
     // Initialize game without starting it
     game = new Game();
-    game.initialize();
+    await game.initialize();
     // Don't start the game loop yet
 }
 
@@ -988,11 +995,11 @@ function startGameLoop() {
     }
 }
 
-function startGame() {
+async function startGame() {
     tracker = new HighscoreTracker();
 
     // Initialize game but don't start it yet
-    initializeGame();
+    await initializeGame();
 
 	document.addEventListener('keydown', (e) => {
 	    if (e.code === 'Space') {
@@ -1090,9 +1097,9 @@ function startGame() {
     }
 }
 
-function restartGame() {
+async function restartGame() {
     document.getElementById('gameOverScreen').style.display = 'none';
-    game.initialize();
+    await game.initialize();
 }
 
 // Start the game when page loads
